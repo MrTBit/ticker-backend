@@ -5,7 +5,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/jwtauth"
 	"net/http"
-	"ticker-backend/Auth"
+	"ticker-backend/auth"
 	"ticker-backend/models"
 )
 
@@ -16,7 +16,7 @@ func (sr SymbolsResource) Routes() chi.Router {
 
 	router.Group(func(router chi.Router) {
 
-		router.Use(jwtauth.Verifier(Auth.TokenAuth)) //seek and verify jwt tokens
+		router.Use(jwtauth.Verifier(auth.TokenAuth)) //seek and verify jwt tokens
 		router.Use(jwtauth.Authenticator)            //handle valid/invalid tokens -> sends 401 if not valid, otherwise goes through
 
 		router.Get("/", sr.List) //GET /symbols - Read all symbols
