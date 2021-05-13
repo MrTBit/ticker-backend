@@ -78,7 +78,7 @@ func (sr SymbolsResource) GetOne(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var symbol models.Symbol
-	db.First(&symbol, "id = ?", id)
+	db.Preload("UserSymbols").First(&symbol, "id = ?", id)
 
 	jsonSymbol, ok := ToJson(symbol, w)
 	if !ok {

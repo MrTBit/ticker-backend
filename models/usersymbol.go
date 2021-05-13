@@ -6,11 +6,9 @@ import (
 )
 
 type UserSymbol struct {
-	SymbolID  uuid.UUID `gorm:"primaryKey;not null"`
-	UserID    uuid.UUID `gorm:"primaryKey;not null"`
+	UserID    uuid.UUID `gorm:"column:user_id;primaryKey"`
+	SymbolID  uuid.UUID `gorm:"column:symbol_id;primaryKey"`
 	CreatedAt time.Time `gorm:"not null"`
 	UpdatedAt time.Time `gorm:"not null"`
 	Amount    float64
-	User      User
-	Symbol    Symbol
 }
