@@ -40,6 +40,7 @@ func main() {
 	})
 
 	r.Mount("/symbols", controllers.SymbolsResource{}.Routes())
+	r.Mount("/users", controllers.UsersResource{}.Routes())
 
 	log.Fatal(http.ListenAndServe(":"+port, r))
 }

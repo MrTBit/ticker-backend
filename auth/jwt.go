@@ -15,3 +15,12 @@ func init() {
 	_, tokenString, _ := TokenAuth.Encode(map[string]interface{}{"user_id": 123})
 	fmt.Printf("DEBUG: a sample jwt is %s\n\n", tokenString)
 }
+
+func GetToken(claims map[string]interface{}) (string, bool) {
+	_, tokenString, err := TokenAuth.Encode(claims)
+	if err != nil {
+		return "", false
+	}
+
+	return tokenString, true
+}
