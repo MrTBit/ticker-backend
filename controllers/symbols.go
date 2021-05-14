@@ -6,7 +6,7 @@ import (
 	"github.com/go-chi/jwtauth"
 	"net/http"
 	"ticker-backend/auth"
-	"ticker-backend/models"
+	"ticker-backend/entities"
 )
 
 type SymbolsResource struct{}
@@ -46,7 +46,7 @@ func (sr SymbolsResource) List(w http.ResponseWriter, r *http.Request) {
 	symbolSearch := r.URL.Query().Get("symbol")
 	descriptionSearch := r.URL.Query().Get("description")
 
-	var symbols []models.Symbol
+	var symbols []entities.Symbol
 
 	if symbolSearch != "" || descriptionSearch != "" {
 		//fetch based on symbol/description
@@ -77,13 +77,15 @@ func (sr SymbolsResource) GetOne(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var symbol models.Symbol
+	var symbol entities.Symbol
 	db.Preload("UserSymbols").First(&symbol, "id = ?", id)
 
 	jsonSymbol, ok := ToJson(symbol, w)
 	if !ok {
 		return
 	}
+
+	w.Header().Set("Content-Type", "application/json")
 
 	if _, err := w.Write(jsonSymbol); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

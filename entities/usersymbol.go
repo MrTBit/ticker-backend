@@ -1,4 +1,4 @@
-package models
+package entities
 
 import (
 	uuid "github.com/satori/go.uuid"
@@ -11,4 +11,5 @@ type UserSymbol struct {
 	CreatedAt time.Time `gorm:"not null"`
 	UpdatedAt time.Time `gorm:"not null"`
 	Amount    float64
+	Symbol    *Symbol `gorm:"foreignKey:ID;references:SymbolID"`
 }

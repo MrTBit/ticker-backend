@@ -2,12 +2,16 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/jwtauth"
+	uuid "github.com/satori/go.uuid"
 	"golang.org/x/crypto/bcrypt"
+	"io"
 	"net/http"
 	"strings"
 	"ticker-backend/auth"
+	"ticker-backend/entities"
 	"ticker-backend/models"
 	"time"
 )
@@ -27,8 +31,8 @@ func (ur UsersResource) Routes() chi.Router {
 		router.Use(jwtauth.Authenticator)
 
 		router.Get("/symbols", ur.GetUserSymbols)
-		//	router.Post("/symbols", ur.AddUserSymbol)
-		//
+		router.Post("/symbols", ur.AddUserSymbol)
+
 		//	router.Route("/symbols/{id}", func(router chi.Router) {
 		//		router.Use(UserSymbolCtx)
 		//		router.Delete("/", ur.DeleteUserSymbol)
@@ -60,7 +64,7 @@ func (ur UsersResource) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if result := db.Find(&models.User{}, "username = ?", username); result.RowsAffected != 0 {
+	if result := db.Find(&entities.User{}, "username = ?", username); result.RowsAffected != 0 {
 		http.Error(w, "Username taken", http.StatusBadRequest)
 		return
 	}
@@ -71,8 +75,8 @@ func (ur UsersResource) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newUser := models.User{
-		Base:        models.Base{},
+	newUser := entities.User{
+		Base:        entities.Base{},
 		Username:    username,
 		Password:    string(passwordHash),
 		UserSymbols: nil,
@@ -107,7 +111,7 @@ func (ur UsersResource) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var user models.User
+	var user entities.User
 
 	if result := db.Find(&user, "username = ?", username); result.RowsAffected == 0 {
 		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
@@ -146,10 +150,17 @@ func (ur UsersResource) GetUserSymbols(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var user models.User
+	var user entities.User
 	result := db.First(&user, "id = ?", userId)
 	if result.Error != nil {
 		http.Error(w, result.Error.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	//Get the UserSymbols and preload the attached Symbol
+	err = db.Model(&user).Preload("Symbol").Association("UserSymbols").Find(&user.UserSymbols)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -158,9 +169,59 @@ func (ur UsersResource) GetUserSymbols(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
+
 	if _, err := w.Write(jsonUserSymbols); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+}
+
+func (ur UsersResource) AddUserSymbol(w http.ResponseWriter, r *http.Request) {
+	db, ok := GetDb(w, r)
+	if !ok {
+		return
+	}
+
+	var symbol models.NewUserSymbol
+
+	requestBody, err := io.ReadAll(r.Body)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err = json.Unmarshal(requestBody, &symbol); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	userId, err := auth.GetUserIdFromContext(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	uuidUserId, err := uuid.FromString(userId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	uuidSymbolId, err := uuid.FromString(symbol.SymbolId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	newUserSymbol := entities.UserSymbol{
+		UserID:   uuidUserId,
+		SymbolID: uuidSymbolId,
+		Amount:   symbol.Amount,
+	}
+
+	db.Create(&newUserSymbol)
 
 }
