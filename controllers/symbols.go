@@ -17,7 +17,7 @@ func (sr SymbolsResource) Routes() chi.Router {
 	router.Group(func(router chi.Router) {
 
 		router.Use(jwtauth.Verifier(auth.TokenAuth)) //seek and verify jwt tokens
-		router.Use(jwtauth.Authenticator)            //handle valid/invalid tokens -> sends 401 if not valid, otherwise goes through
+		router.Use(auth.Authenticator)               //handle valid/invalid tokens -> sends 401 if not valid, otherwise goes through
 
 		router.Get("/", sr.List) //GET /symbols - Read all symbols
 

@@ -28,16 +28,16 @@ func (ur UsersResource) Routes() chi.Router {
 	//need auth
 	router.Group(func(router chi.Router) {
 		router.Use(jwtauth.Verifier(auth.TokenAuth))
-		router.Use(jwtauth.Authenticator)
+		router.Use(auth.Authenticator)
 
 		router.Get("/symbols", ur.GetUserSymbols)
 		router.Post("/symbols", ur.AddUserSymbol)
 
-		//	router.Route("/symbols/{id}", func(router chi.Router) {
-		//		router.Use(UserSymbolCtx)
-		//		router.Delete("/", ur.DeleteUserSymbol)
-		//		router.Put("/", ur.ModifyUserSymbol)
-		//	})
+		router.Route("/symbols/{id}", func(router chi.Router) {
+			router.Use(UserSymbolCtx)
+			router.Delete("/", ur.DeleteUserSymbol)
+			router.Put("/", ur.UpdateUserSymbol)
+		})
 	})
 
 	return router
@@ -184,16 +184,15 @@ func (ur UsersResource) AddUserSymbol(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var symbol models.NewUserSymbol
+	var symbols []models.NewUserSymbol
 
 	requestBody, err := io.ReadAll(r.Body)
-
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	if err = json.Unmarshal(requestBody, &symbol); err != nil {
+	if err = json.Unmarshal(requestBody, &symbols); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -210,18 +209,71 @@ func (ur UsersResource) AddUserSymbol(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	uuidSymbolId, err := uuid.FromString(symbol.SymbolId)
+	for _, symbol := range symbols {
+		uuidSymbolId, err := uuid.FromString(symbol.SymbolId)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		result := db.Find(&entities.UserSymbol{}, "user_id = ? and symbol_id = ?", uuidUserId.String(), uuidSymbolId.String())
+		if result.RowsAffected != 0 {
+			continue //skip since it already exists
+		}
+
+		newUserSymbol := entities.UserSymbol{
+			UserID:   uuidUserId,
+			SymbolID: uuidSymbolId,
+			Amount:   symbol.Amount,
+		}
+
+		db.Create(&newUserSymbol)
+	}
+}
+
+func (ur UsersResource) DeleteUserSymbol(w http.ResponseWriter, r *http.Request) {
+	symbolId := r.Context().Value("id").(string)
+
+	db, ok := GetDb(w, r)
+	if !ok {
+		return
+	}
+
+	userId, err := auth.GetUserIdFromContext(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	newUserSymbol := entities.UserSymbol{
-		UserID:   uuidUserId,
-		SymbolID: uuidSymbolId,
-		Amount:   symbol.Amount,
+	db.Delete(&entities.UserSymbol{}, "user_id = ? and symbol_id = ?", userId, symbolId)
+}
+
+func (ur UsersResource) UpdateUserSymbol(w http.ResponseWriter, r *http.Request) {
+	symbolId := r.Context().Value("id").(string)
+
+	db, ok := GetDb(w, r)
+	if !ok {
+		return
 	}
 
-	db.Create(&newUserSymbol)
+	var userSymbol models.NewUserSymbol
 
+	requestBody, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err = json.Unmarshal(requestBody, &userSymbol); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	userId, err := auth.GetUserIdFromContext(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	db.Model(&entities.UserSymbol{}).Where("user_id = ? and symbol_id = ?", userId, symbolId).Update("amount", userSymbol.Amount)
 }
