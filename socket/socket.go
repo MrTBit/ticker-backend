@@ -48,9 +48,9 @@ func InitSocket(interrupt <-chan models.SocketInterrupt) {
 			return
 		case op := <-interrupt:
 			if op.InterruptType == "subscribe" {
-				Subscribe(op.Symbol)
+				subscribe(op.Symbol)
 			} else if op.InterruptType == "unsubscribe" {
-				Unsubscribe(op.Symbol)
+				unsubscribe(op.Symbol)
 			}
 		}
 	}
@@ -88,7 +88,7 @@ func handleMessageRecv(message models.FHRecvMessage) {
 
 }
 
-func Subscribe(symbol string) {
+func subscribe(symbol string) {
 	err := conn.WriteJSON(models.FHSendMessage{MessageType: "subscribe", Symbol: symbol})
 	if err != nil {
 		log.Println(err.Error())
@@ -96,7 +96,7 @@ func Subscribe(symbol string) {
 	}
 }
 
-func Unsubscribe(symbol string) {
+func unsubscribe(symbol string) {
 	err := conn.WriteJSON(models.FHSendMessage{MessageType: "unsubscribe", Symbol: symbol})
 	if err != nil {
 		log.Println(err.Error())
@@ -109,6 +109,6 @@ func SubscribeToAllActiveSymbols() {
 	database.DBConn.Where("active = true").Find(&activeSymbols)
 
 	for _, symbol := range activeSymbols {
-		Subscribe(symbol.Symbol)
+		subscribe(symbol.Symbol)
 	}
 }

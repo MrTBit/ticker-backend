@@ -3,13 +3,17 @@ package tickers
 import (
 	"ticker-backend/database"
 	"ticker-backend/entities"
-	"ticker-backend/socket"
+	"ticker-backend/models"
 	"time"
 )
 
-type ActiveUserTicker struct{}
+type ActiveUserTicker struct {
+	socketInterrupt chan models.SocketInterrupt
+}
 
-func (aut ActiveUserTicker) Start() {
+func (aut ActiveUserTicker) Start(socketInterrupt chan models.SocketInterrupt) {
+	aut.socketInterrupt = socketInterrupt
+
 	ticker := time.NewTicker(time.Second)
 
 	go func() {
@@ -29,7 +33,10 @@ func (aut ActiveUserTicker) Start() {
 				Find(&symbolsToUnsubscribe)
 
 			for _, symbol := range symbolsToUnsubscribe {
-				socket.Unsubscribe(symbol.Symbol)
+				aut.socketInterrupt <- models.SocketInterrupt{
+					InterruptType: "unsubscribe",
+					Symbol:        symbol.Symbol,
+				}
 				//TODO: convert to update where id in [] to hit db less
 				database.DBConn.Model(&entities.Symbol{}).Where("id = ?", symbol.Id).Update("active", false)
 			}

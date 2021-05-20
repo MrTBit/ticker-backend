@@ -28,7 +28,7 @@ func main() {
 	go socket.InitSocket(socketInterrupt)
 
 	log.Println("Starting tickers")
-	tickers.Init()
+	tickers.Init(socketInterrupt)
 
 	log.Printf("Starting up api on port %s\n", port)
 
