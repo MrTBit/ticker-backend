@@ -14,7 +14,7 @@ type ActiveUserTicker struct {
 func (aut ActiveUserTicker) Start(socketInterrupt chan models.SocketInterrupt) {
 	aut.socketInterrupt = socketInterrupt
 
-	ticker := time.NewTicker(time.Second)
+	ticker := time.NewTicker(time.Minute)
 
 	go func() {
 		for {
