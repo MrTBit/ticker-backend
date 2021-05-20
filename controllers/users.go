@@ -16,10 +16,14 @@ import (
 	"time"
 )
 
-type UsersResource struct{}
+type UsersResource struct {
+	socketInterrupt chan models.SocketInterrupt
+}
 
-func (ur UsersResource) Routes() chi.Router {
+func (ur UsersResource) Routes(socketInterrupt chan models.SocketInterrupt) chi.Router {
 	router := chi.NewRouter()
+
+	ur.socketInterrupt = socketInterrupt
 
 	//public
 	router.Post("/login", ur.Login)
@@ -129,9 +133,6 @@ func (ur UsersResource) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user.LastSeen = time.Now()
-	db.Save(&user)
-
 	if _, err := w.Write([]byte(token)); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -228,6 +229,18 @@ func (ur UsersResource) AddUserSymbol(w http.ResponseWriter, r *http.Request) {
 		}
 
 		db.Create(&newUserSymbol)
+
+		//set symbol active
+		db.Model(&entities.Symbol{}).Where("id = ?", uuidSymbolId.String()).Update("active", true)
+
+		dbSymbol := entities.Symbol{Base: entities.Base{ID: uuidSymbolId}}
+		db.First(&dbSymbol)
+
+		//subscribe to symbol
+		ur.socketInterrupt <- models.SocketInterrupt{
+			InterruptType: "subscribe",
+			Symbol:        dbSymbol.Symbol,
+		}
 	}
 }
 

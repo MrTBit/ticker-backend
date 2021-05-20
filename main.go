@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"log"
@@ -9,7 +8,9 @@ import (
 	"os"
 	"ticker-backend/controllers"
 	"ticker-backend/database"
-	"ticker-backend/migrations"
+	"ticker-backend/models"
+	"ticker-backend/socket"
+	"ticker-backend/tickers"
 )
 
 func main() {
@@ -19,11 +20,17 @@ func main() {
 		port = fromEnv
 	}
 
-	fmt.Println("Starting up db connection...")
+	log.Println("Starting up db connection...")
 	database.InitDb()
-	migrations.Migrate()
 
-	fmt.Printf("Starting up api on port %s\n", port)
+	log.Println("Connecting to websocket...")
+	socketInterrupt := make(chan models.SocketInterrupt)
+	go socket.InitSocket(socketInterrupt)
+
+	log.Println("Starting tickers")
+	tickers.Init()
+
+	log.Printf("Starting up api on port %s\n", port)
 
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
@@ -40,7 +47,7 @@ func main() {
 	})
 
 	r.Mount("/symbols", controllers.SymbolsResource{}.Routes())
-	r.Mount("/users", controllers.UsersResource{}.Routes())
+	r.Mount("/users", controllers.UsersResource{}.Routes(socketInterrupt))
 
 	log.Fatal(http.ListenAndServe(":"+port, r))
 }

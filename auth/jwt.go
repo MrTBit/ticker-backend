@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"ticker-backend/database"
 	"ticker-backend/entities"
+	"time"
 )
 
 var TokenAuth *jwtauth.JWTAuth
@@ -67,6 +68,10 @@ func Authenticator(next http.Handler) http.Handler {
 			http.Error(w, http.StatusText(401), 401)
 			return
 		}
+
+		//update user LastSeen
+		user.LastSeen = time.Now()
+		db.Save(&user)
 
 		// Token is authenticated and user exists, pass it through
 		next.ServeHTTP(w, r)
