@@ -34,7 +34,6 @@ func InitSocket(interrupt <-chan models.SocketInterrupt) {
 				log.Println("read:", err)
 				return
 			}
-			log.Println("recv: ", messageJson)
 
 			if messageJson.MessageType == "trade" {
 				handleMessageRecv(messageJson)

@@ -165,6 +165,17 @@ func (ur UsersResource) GetUserSymbols(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	//set user symbols to active and subscribe to them
+	for _, userSymbol := range user.UserSymbols {
+		//set symbol active
+		db.Model(&entities.Symbol{}).Where("id = ?", userSymbol.SymbolID.String()).Update("active", true)
+
+		ur.socketInterrupt <- models.SocketInterrupt{
+			InterruptType: "subscribe",
+			Symbol:        userSymbol.Symbol.Symbol,
+		}
+	}
+
 	jsonUserSymbols, ok := ToJson(user.UserSymbols, w)
 	if !ok {
 		return
