@@ -7,9 +7,9 @@ import (
 )
 
 type Base struct {
-	ID        uuid.UUID `gorm:"type:uuid;primary_key;not null"`
-	CreatedAt time.Time `json:"created_at,string" gorm:"not null"`
-	UpdatedAt time.Time `json:"updated_at,string" gorm:"not null"`
+	ID        uuid.UUID `gorm:"type:uuid;primary_key;not null" json:"id"`
+	CreatedAt time.Time `json:"createdAt,string" gorm:"not null"`
+	UpdatedAt time.Time `json:"updatedAt,string" gorm:"not null"`
 }
 
 // BeforeCreate will set a UUID rather than numeric ID.

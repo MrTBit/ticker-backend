@@ -1,6 +1,6 @@
 package models
 
 type NewUserSymbol struct {
-	SymbolId string
-	Amount   float64
+	SymbolId string  `json:"symbolId"`
+	Amount   float64 `json:"amount"`
 }
