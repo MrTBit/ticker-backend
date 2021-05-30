@@ -21,6 +21,8 @@ func GetToken(claims map[string]interface{}) (string, bool) {
 		return "", false
 	}
 
+	tokenString = "\"" + tokenString + "\""
+
 	return tokenString, true
 }
 

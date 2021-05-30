@@ -95,8 +95,6 @@ func (ur UsersResource) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token = "\"" + token + "\""
-
 	if _, err := w.Write([]byte(token)); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -135,8 +133,6 @@ func (ur UsersResource) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token = "\"" + token + "\""
-
 	if _, err := w.Write([]byte(token)); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -169,14 +165,16 @@ func (ur UsersResource) GetUserSymbols(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//set user symbols to active and subscribe to them
+	//set user symbols to active and subscribe to them if not active
 	for _, userSymbol := range user.UserSymbols {
-		//set symbol active
-		db.Model(&entities.Symbol{}).Where("id = ?", userSymbol.SymbolID.String()).Update("active", true)
+		if userSymbol.Symbol.Active == false {
+			//set symbol active
+			db.Model(&entities.Symbol{}).Where("id = ?", userSymbol.SymbolID.String()).Update("active", true)
 
-		ur.socketInterrupt <- models.SocketInterrupt{
-			InterruptType: "subscribe",
-			Symbol:        userSymbol.Symbol.Symbol,
+			ur.socketInterrupt <- models.SocketInterrupt{
+				InterruptType: "subscribe",
+				Symbol:        userSymbol.Symbol.Symbol,
+			}
 		}
 	}
 
