@@ -95,6 +95,8 @@ func (ur UsersResource) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	token = "\"" + token + "\""
+
 	if _, err := w.Write([]byte(token)); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -132,6 +134,8 @@ func (ur UsersResource) Login(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
+
+	token = "\"" + token + "\""
 
 	if _, err := w.Write([]byte(token)); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
