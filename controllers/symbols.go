@@ -48,6 +48,8 @@ func (sr SymbolsResource) List(w http.ResponseWriter, r *http.Request) {
 	var symbols []entities.Symbol
 
 	if search != "" {
+		search = "%" + search + "%"
+
 		//fetch based on symbol/description
 		db.Where("symbol ilike ? OR description ilike ?", search, search).Find(&symbols)
 	} else {
