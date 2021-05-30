@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
+	"github.com/go-chi/cors"
 	"log"
 	"net/http"
 	"os"
@@ -35,6 +36,13 @@ func main() {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(database.SetDBMiddleware)
+
+	//cors bs
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins: []string{"https://*", "http://*"},
+		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		MaxAge:         300,
+	}))
 
 	if loggingDisabled := os.Getenv("DISABLE_LOGGING"); loggingDisabled == "" {
 		r.Use(middleware.Logger)
