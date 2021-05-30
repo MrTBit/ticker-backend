@@ -49,7 +49,7 @@ func (sr SymbolsResource) List(w http.ResponseWriter, r *http.Request) {
 
 	if search != "" {
 		//fetch based on symbol/description
-		db.Where("symbol ilike ?", search).Find(&symbols)
+		db.Where("symbol ilike ? OR description ilike ?", search, search).Find(&symbols)
 	} else {
 		//fetch all
 		db.Find(&symbols)
