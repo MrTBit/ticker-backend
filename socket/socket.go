@@ -88,6 +88,7 @@ func handleMessageRecv(message models.FHRecvMessage) {
 }
 
 func subscribe(symbol string) {
+	log.Println("Subscribing to: " + symbol)
 	err := conn.WriteJSON(models.FHSendMessage{MessageType: "subscribe", Symbol: symbol})
 	if err != nil {
 		log.Println(err.Error())
@@ -96,6 +97,7 @@ func subscribe(symbol string) {
 }
 
 func unsubscribe(symbol string) {
+	log.Println("Unsubscribing from: " + symbol)
 	err := conn.WriteJSON(models.FHSendMessage{MessageType: "unsubscribe", Symbol: symbol})
 	if err != nil {
 		log.Println(err.Error())
