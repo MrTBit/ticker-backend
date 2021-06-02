@@ -38,11 +38,7 @@ func main() {
 	r.Use(database.SetDBMiddleware)
 
 	//cors bs
-	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins: []string{"*"},
-		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		MaxAge:         300,
-	}))
+	r.Use(cors.AllowAll().Handler)
 
 	if loggingDisabled := os.Getenv("DISABLE_LOGGING"); loggingDisabled == "" {
 		r.Use(middleware.Logger)
